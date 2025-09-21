@@ -1,0 +1,4 @@
+[submodule "Lib/STM32_ILI9341"]
+	path = Lib/STM32_ILI9341
+	url = https://github.com/Diveturtle93/STM32_ILI9341.git
+	branch = main
