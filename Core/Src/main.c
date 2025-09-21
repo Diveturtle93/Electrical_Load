@@ -106,6 +106,17 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
+  // DAC auf null setzen
+  DAC1->DHR12R1 = 0;
+  DAC1->DHR12R2 = 0;
+
+  // ADC kalibrieren, damit Ergebnis valide. Zwingend erforderlich
+  HAL_ADCEx_Calibration_Start(hadc1);
+  HAL_ADCEx_Calibration_Start(hadc2);
+
+  // Freigabe loeschen
+  HAL_GPIO_WritePin(IFRG_GPIO_Port, IFRG_Pin, GPIO_PIN_RESET);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */

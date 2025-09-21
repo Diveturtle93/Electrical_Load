@@ -129,7 +129,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     PB0     ------> ADC1_IN8
     PB1     ------> ADC1_IN9
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+    GPIO_InitStruct.Pin = SPANNUNG_Pin|STROM_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -150,7 +150,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     PA2     ------> ADC2_IN2
     PA3     ------> ADC2_IN3
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
+    GPIO_InitStruct.Pin = TEMPERATUR_Pin|TEMPERATUR_PCB_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -175,7 +175,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     PB0     ------> ADC1_IN8
     PB1     ------> ADC1_IN9
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0|GPIO_PIN_1);
+    HAL_GPIO_DeInit(GPIOB, SPANNUNG_Pin|STROM_Pin);
 
   /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
@@ -193,7 +193,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     PA2     ------> ADC2_IN2
     PA3     ------> ADC2_IN3
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2|GPIO_PIN_3);
+    HAL_GPIO_DeInit(GPIOA, TEMPERATUR_Pin|TEMPERATUR_PCB_Pin);
 
   /* USER CODE BEGIN ADC2_MspDeInit 1 */
 
