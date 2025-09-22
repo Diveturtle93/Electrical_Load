@@ -29,7 +29,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "adc_input.h"
+#include "ili9341.h"
+#include "menu.h"
+#include "millis.h"
+#include "my_math.h"
+#include "temperatur.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

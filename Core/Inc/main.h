@@ -109,7 +109,11 @@ void Error_Handler(void);
 #define PWM_OUT2_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-
+typedef enum
+{
+	false,
+	true,
+} bool;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
