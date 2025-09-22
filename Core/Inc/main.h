@@ -65,8 +65,8 @@ void Error_Handler(void);
 #define OUT2_GPIO_Port GPIOC
 #define OUT1_Pin GPIO_PIN_2
 #define OUT1_GPIO_Port GPIOC
-#define OUT0_Pin GPIO_PIN_3
-#define OUT0_GPIO_Port GPIOC
+#define DIS_LED_Pin GPIO_PIN_3
+#define DIS_LED_GPIO_Port GPIOC
 #define BUTTON1_Pin GPIO_PIN_0
 #define BUTTON1_GPIO_Port GPIOA
 #define BUTTON2_Pin GPIO_PIN_1
@@ -79,10 +79,10 @@ void Error_Handler(void);
 #define KL15_GPIO_Port GPIOA
 #define DIS_CS_Pin GPIO_PIN_7
 #define DIS_CS_GPIO_Port GPIOA
-#define DIS_LED_Pin GPIO_PIN_4
-#define DIS_LED_GPIO_Port GPIOC
-#define DIS_RESET_Pin GPIO_PIN_5
+#define DIS_RESET_Pin GPIO_PIN_4
 #define DIS_RESET_GPIO_Port GPIOC
+#define DIS_DC_Pin GPIO_PIN_5
+#define DIS_DC_GPIO_Port GPIOC
 #define SPANNUNG_Pin GPIO_PIN_0
 #define SPANNUNG_GPIO_Port GPIOB
 #define STROM_Pin GPIO_PIN_1

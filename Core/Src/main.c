@@ -55,7 +55,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+// IMD Variablen fuer Timer
+static volatile uint16_t rising = 0, falling = 0;
+static volatile uint8_t pwm_change = 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -77,7 +79,18 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+	// Timer Variablen
+	uint32_t timer3Periode = 0;
+	uint16_t frequency = 0, rpm = 0, encoder = 0;
+	uint32_t lasttimeloop = 0;
 
+	// AD-Wandler Variablen
+	double spannung = 0, strom = 0;
+	uint16_t vint = 0, stm_temp = 0, pcb_temp = 0, vcc = 0;
+	uint16_t ADC_Wert = 0, adc_spannung = 0, adc_strom = 0;
+
+	// Min. Luefter PWM fuer Anlauf
+	uint16_t count = 10000;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -108,19 +121,59 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_USART1_UART_Init();
-  MX_TIM2_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
-  // DAC auf null setzen
-  DAC1->DHR12R1 = 0;
-  DAC1->DHR12R2 = 0;
+	// DAC auf null setzen
+	DAC1->DHR12R1 = 0;
+	DAC1->DHR12R2 = 0;
 
-  // ADC kalibrieren, damit Ergebnis valide. Zwingend erforderlich
-  HAL_ADCEx_Calibration_Start(hadc1);
-  HAL_ADCEx_Calibration_Start(hadc2);
+	// Timer Starten
+	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
+	HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
 
-  // Freigabe loeschen
-  HAL_GPIO_WritePin(IFRG_GPIO_Port, IFRG_Pin, GPIO_PIN_RESET);
+	// DAC Starten
+//	HAL_DAC_Start(&hdac, DAC1_CHANNEL_1);
+//	HAL_DAC_Start(&hdac, DAC1_CHANNEL_2);
+
+	// ADC kalibrieren, damit Ergebnis valide. Zwingend erforderlich
+	HAL_ADCEx_Calibration_Start(&hadc1);
+	HAL_ADCEx_Calibration_Start(&hadc2);
+
+	// Display einschalten und initialisieren
+	ILI9341_LedON();
+	ILI9341_Unselect();
+	ILI9341_Init();
+
+	// Willkommen
+	RenderWelcome();
+
+	// Freigabe loeschen
+	HAL_GPIO_WritePin(IFRG_GPIO_Port, IFRG_Pin, GPIO_PIN_RESET);
+
+	// Timer 3 fuer Luefter PWM-Eingang aktivieren
+	if (HAL_TIM_Base_Init(&htim3) != HAL_OK);
+	if (HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1) != HAL_OK);
+	if (HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2) != HAL_OK);
+	timer3Periode = (HAL_RCC_GetPCLK2Freq() / htim3.Init.Prescaler);
+
+	// Menu Ausgeben
+	RenderMenu();
+
+	ILI9341_WriteString(40, 134, " 120.4V", Font_16x26, ILI9341_BLACK, ILI9341_RED);
+	ILI9341_WriteString(200, 134, " 120.4A", Font_16x26, ILI9341_BLACK, ILI9341_YELLOW);
+	ILI9341_WriteString(40, 164, " 120.4W", Font_16x26, ILI9341_BLACK, ILI9341_BLUE);
+	ILI9341_WriteString(5, 220, "24,6 C", Font_11x18, ILI9341_BLACK, ILI9341_GREEN);
+	ILI9341_WriteString(85, 220, "25,4 C", Font_11x18, ILI9341_BLACK, ILI9341_GREEN);
+	ILI9341_WriteString(225, 220, "     RPM", Font_11x18, ILI9341_BLACK, ILI9341_YELLOW);
+
+	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+
+	// Min. Luefter PWM fuer Betrieb
+//	count = 5000;
+	count = 0;
+	TIM4->CCR1 = count;
+	HAL_Delay(500);
 
   /* USER CODE END 2 */
 
@@ -128,9 +181,65 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  adc_spannung = readADC(ADC_CHANNEL_8);
+	  adc_strom = readADC(ADC_CHANNEL_9);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  if (adc_strom >= 100)
+		  DAC->DHR12R1 = 0;
+
+	  if (millis() > (lasttimeloop + 1000))
+	  {
+		  encoder = __HAL_TIM_GET_COUNTER(&htim5);
+		  RenderInt(225, 10, encoder);
+		  drehencoder(encoder);
+
+		  // Wenn sich der Pegel am Luefter Tacho aendert
+		  if (pwm_change == 1)
+		  {
+			  if (rising != 0 && falling != 0)
+			  {
+				  // Berechne Frequenzy von Luefter-Tacho, Pro Umdrehung 2 Pulse, daher mal 30 um U/min
+				  frequency = timer3Periode / rising;
+				  rpm = frequency * 30;
+			  }
+
+			  pwm_change = 0;
+			  RenderInt(225, 220, rpm);
+		  }
+
+		  ADC_Wert = readADC(ADC_CHANNEL_VREFINT);
+		  vint = ADC_Wert * ADC_VREF / ADC_MAX_VALUE;
+		  vcc = vint * ADC_MAX_VALUE / ADC_Wert;
+		  RenderInt(85, 10, vint);
+		  RenderInt(165, 10, vcc);
+
+		  ADC_Wert = readADC(ADC_CHANNEL_TEMPSENSOR);
+		  stm_temp = temperatur(ADC_Wert, STM32F105);
+		  RenderInt(165, 195, stm_temp);
+
+		  ADC_Wert = readADC(ADC_CHANNEL_9);
+		  strom = ((((ADC_Wert / ADC_MAX_VALUE) * (VOLTAGE_MAX / 100.0)) / (1.0 + (CURRENT_R1 / CURRENT_R2))) / (CURRENT_SHUNT / 100.0));
+		  RenderFloat(85, 195, strom);
+
+		  ADC_Wert = readADC(ADC_CHANNEL_3);
+		  pcb_temp = temperatur(ADC_Wert, NTCS0603E3472FHT);
+		  RenderInt(245, 195, pcb_temp);
+
+		  HAL_Delay(1000);
+		  ADC_Wert = readADC(ADC_CHANNEL_8);
+//		  ADC_old = (ADC_old + ((ADC_Wert- ADC_old) / 10));
+//		  spannung = ((((float)ADC_Wert / ADC_MAX_VALUE) * ((VOLTAGE_PRERESISTOR + VOLTAGE_R0) / VOLTAGE_R0)) * (VOLTAGE_MAX / 100.0));
+		  spannung = ((((float)ADC_Wert * (float)vcc) / ADC_MAX_VALUE)/100 * 45/27);
+		  spannung = (spannung * 462/22);
+		  RenderFloat(5, 195, spannung);
+		  RenderInt(5, 10, ADC_Wert);
+
+		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+
+		  lasttimeloop = millis();
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -190,7 +299,23 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+// Timer Interrupt
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+	// Timer 3 fuer Luefter PWM-Auswertung
+	if (htim == &htim3)
+	{
+		pwm_change = 1;
+		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+		{
+			rising = calculateMovingAverage(rising, HAL_TIM_ReadCapturedValue(&htim3, TIM_CHANNEL_1), 10);
+		}
+		else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
+		{
+			falling = calculateMovingAverage(falling, HAL_TIM_ReadCapturedValue(&htim3, TIM_CHANNEL_2), 10);
+		}
+	}
+}
 /* USER CODE END 4 */
 
 /**
