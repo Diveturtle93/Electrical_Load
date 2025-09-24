@@ -29,7 +29,7 @@ static uint16_t temp_stm32f105 (uint16_t ADCValue)
 {
 	uint16_t temp = 0;
 
-	temp = ((STM32F105_TEMP_V25 - (float)ADCValue * ADC_VINT / ADC_MAX_VALUE) / STM32F105_TEMP_AVG_SLOPE) + 25.0;
+	temp = ((STM32F105_TEMP_V25 - (float)ADCValue / ADC_MAX_VALUE * ADC_VREF) / STM32F105_TEMP_AVG_SLOPE) + 25.0;
 
 	return temp;
 }

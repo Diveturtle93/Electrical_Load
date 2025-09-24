@@ -87,7 +87,8 @@ int main(void)
 	// AD-Wandler Variablen
 	double spannung = 0, strom = 0;
 	uint16_t vint = 0, stm_temp = 0, pcb_temp = 0, vcc = 0;
-	uint16_t ADC_Wert = 0, adc_spannung = 0, adc_strom = 0;
+	uint16_t adc_spannung = 0, adc_strom = 0, adc_vref = 0;
+	uint16_t adc_stm_temp = 0, adc_ext_temp = 0, adc_pcb_temp = 0;
 
 	// Min. Luefter PWM fuer Anlauf
 	uint16_t count = 10000;
@@ -127,6 +128,8 @@ int main(void)
 	// DAC auf null setzen
 	DAC1->DHR12R1 = 0;
 	DAC1->DHR12R2 = 0;
+//	HAL_DACEx_DualStart(&hdac);
+//	HAL_DACEx_DualSetValue(&hdac, DAC_ALIGN_12B_R, 0, 0);
 
 	// Timer Starten
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
@@ -183,6 +186,10 @@ int main(void)
   {
 	  adc_spannung = readADC(ADC_CHANNEL_8);
 	  adc_strom = readADC(ADC_CHANNEL_9);
+	  adc_vref = readADC(ADC_CHANNEL_VREFINT);
+	  adc_stm_temp = readADC(ADC_CHANNEL_TEMPSENSOR);
+	  adc_ext_temp = readADC(ADC_CHANNEL_2);
+	  adc_pcb_temp = readADC(ADC_CHANNEL_3);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -209,32 +216,27 @@ int main(void)
 			  RenderInt(225, 220, rpm);
 		  }
 
-		  ADC_Wert = readADC(ADC_CHANNEL_VREFINT);
-		  vint = ADC_Wert * ADC_VREF / ADC_MAX_VALUE;
-		  vcc = vint * ADC_MAX_VALUE / ADC_Wert;
+		  vint = adc_vref * ADC_VREF / ADC_MAX_VALUE;
+		  vcc = vint * ADC_MAX_VALUE / adc_vref;
 		  RenderInt(85, 10, vint);
 		  RenderInt(165, 10, vcc);
 
-		  ADC_Wert = readADC(ADC_CHANNEL_TEMPSENSOR);
-		  stm_temp = temperatur(ADC_Wert, STM32F105);
+		  stm_temp = temperatur(adc_stm_temp, STM32F105);
 		  RenderInt(165, 195, stm_temp);
 
-		  ADC_Wert = readADC(ADC_CHANNEL_9);
-		  strom = ((((ADC_Wert / ADC_MAX_VALUE) * (VOLTAGE_MAX / 100.0)) / (1.0 + (CURRENT_R1 / CURRENT_R2))) / (CURRENT_SHUNT / 100.0));
+		  strom = ((((adc_strom / ADC_MAX_VALUE) * (VOLTAGE_MAX / 100.0)) / (1.0 + (CURRENT_R1 / CURRENT_R2))) / (CURRENT_SHUNT / 1000.0));
 		  RenderFloat(85, 195, strom);
 
-		  ADC_Wert = readADC(ADC_CHANNEL_3);
-		  pcb_temp = temperatur(ADC_Wert, NTCS0603E3472FHT);
+		  pcb_temp = temperatur(adc_pcb_temp, NTCS0603E3472FHT);
 		  RenderInt(245, 195, pcb_temp);
 
 		  HAL_Delay(1000);
-		  ADC_Wert = readADC(ADC_CHANNEL_8);
 //		  ADC_old = (ADC_old + ((ADC_Wert- ADC_old) / 10));
 //		  spannung = ((((float)ADC_Wert / ADC_MAX_VALUE) * ((VOLTAGE_PRERESISTOR + VOLTAGE_R0) / VOLTAGE_R0)) * (VOLTAGE_MAX / 100.0));
-		  spannung = ((((float)ADC_Wert * (float)vcc) / ADC_MAX_VALUE)/100 * 45/27);
-		  spannung = (spannung * 462/22);
+		  spannung = ((((float)adc_spannung * ADC_VREF/100.0) / ADC_MAX_VALUE) * 45.0/27.0);
+		  spannung = (spannung * 462.0/22.0);
 		  RenderFloat(5, 195, spannung);
-		  RenderInt(5, 10, ADC_Wert);
+		  RenderInt(5, 10, adc_spannung);
 
 		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 

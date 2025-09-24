@@ -109,11 +109,18 @@ void Error_Handler(void);
 #define PWM_OUT2_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+//----------------------------------------------------------------------
 typedef enum
 {
 	false,
 	true,
 } bool;
+//----------------------------------------------------------------------
+
+// Display SPI Port definieren
+//----------------------------------------------------------------------
+#define DIS_SPI_PORT			hspi3
+//----------------------------------------------------------------------
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
