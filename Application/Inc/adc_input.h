@@ -48,7 +48,7 @@
 
 // Funktionen definieren
 //----------------------------------------------------------------------
-uint16_t readADC (uint8_t channel);
+uint16_t readADC (ADC_HandleTypeDef* hadc, uint8_t channel);
 //----------------------------------------------------------------------
 
 #endif /* INC_ADC_INPUT_H_ */

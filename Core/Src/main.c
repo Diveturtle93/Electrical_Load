@@ -86,7 +86,7 @@ int main(void)
 
 	// AD-Wandler Variablen
 	double spannung = 0, strom = 0;
-	uint16_t vint = 0, stm_temp = 0, pcb_temp = 0, vcc = 0;
+	uint16_t vint = 0, stm_temp = 0, pcb_temp = 0, vcc = 0, ext_temp = 0;
 	uint16_t adc_spannung = 0, adc_strom = 0, adc_vref = 0;
 	uint16_t adc_stm_temp = 0, adc_ext_temp = 0, adc_pcb_temp = 0;
 
@@ -173,7 +173,6 @@ int main(void)
 	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
 
 	// Min. Luefter PWM fuer Betrieb
-//	count = 5000;
 	count = 0;
 	TIM4->CCR1 = count;
 	HAL_Delay(500);
@@ -184,12 +183,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  adc_spannung = readADC(ADC_CHANNEL_8);
-	  adc_strom = readADC(ADC_CHANNEL_9);
-	  adc_vref = readADC(ADC_CHANNEL_VREFINT);
-	  adc_stm_temp = readADC(ADC_CHANNEL_TEMPSENSOR);
-	  adc_ext_temp = readADC(ADC_CHANNEL_2);
-	  adc_pcb_temp = readADC(ADC_CHANNEL_3);
+	  adc_spannung = readADC(&hadc1, ADC_CHANNEL_8);
+	  adc_strom = readADC(&hadc1, ADC_CHANNEL_9);
+	  adc_vref = readADC(&hadc1, ADC_CHANNEL_VREFINT);
+	  adc_stm_temp = readADC(&hadc1, ADC_CHANNEL_TEMPSENSOR);
+	  adc_ext_temp = readADC(&hadc2, ADC_CHANNEL_2);
+	  adc_pcb_temp = readADC(&hadc2, ADC_CHANNEL_3);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -224,13 +223,15 @@ int main(void)
 		  stm_temp = temperatur(adc_stm_temp, STM32F105);
 		  RenderInt(165, 195, stm_temp);
 
+		  ext_temp = temperatur(adc_ext_temp, NTCS0603E3472FHT);
+		  RenderInt(245, 195, ext_temp);
+
 		  strom = ((((adc_strom / ADC_MAX_VALUE) * (VOLTAGE_MAX / 100.0)) / (1.0 + (CURRENT_R1 / CURRENT_R2))) / (CURRENT_SHUNT / 1000.0));
 		  RenderFloat(85, 195, strom);
 
 		  pcb_temp = temperatur(adc_pcb_temp, NTCS0603E3472FHT);
 		  RenderInt(245, 195, pcb_temp);
 
-		  HAL_Delay(1000);
 //		  ADC_old = (ADC_old + ((ADC_Wert- ADC_old) / 10));
 //		  spannung = ((((float)ADC_Wert / ADC_MAX_VALUE) * ((VOLTAGE_PRERESISTOR + VOLTAGE_R0) / VOLTAGE_R0)) * (VOLTAGE_MAX / 100.0));
 		  spannung = ((((float)adc_spannung * ADC_VREF/100.0) / ADC_MAX_VALUE) * 45.0/27.0);
